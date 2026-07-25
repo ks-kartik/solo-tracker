@@ -2,6 +2,7 @@ import { useGame } from '../context/GameContext';
 import RankBadge from './RankBadge';
 import StatBar from './StatBar';
 import TaskItem from './TaskItem';
+import ScreenContainer from './ScreenContainer';
 
 const panelStyle = {
   background: 'var(--panel)',
@@ -29,7 +30,7 @@ export default function Dashboard() {
   const currentStreak = Math.max(0, ...tasks.filter((t) => t.type === 'daily').map((t) => t.streak?.current || 0));
 
   return (
-    <div style={{ maxWidth: 420, margin: '0 auto', padding: '20px 16px 90px' }}>
+    <ScreenContainer>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <span
           style={{
@@ -130,6 +131,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </ScreenContainer>
   );
 }

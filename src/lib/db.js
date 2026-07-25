@@ -68,13 +68,23 @@ export async function ensureSeeded() {
     await tx.done;
   }
 
-  const existingTasks = await db.getAll('tasks');
-  if (existingTasks.length === 0) {
-    const tx = db.transaction('tasks', 'readwrite');
-    for (const task of EXAMPLE_TASKS) {
-      await tx.store.put(task);
+  // Only ever seed the example quests once, tracked via a meta flag -
+  // not "if the task list happens to be empty", which would bring
+  // deleted example tasks back from the dead every time you clear them.
+  const alreadySeeded = await db.get('meta', 'exampleTasksSeeded');
+  if (!alreadySeeded) {
+    const existingTasks = await db.getAll('tasks');
+    // Only seed on a genuinely fresh install (no tasks ever created).
+    // If tasks already exist, this is an existing user upgrading to this
+    // fix - just mark seeding as done without resurrecting anything.
+    if (existingTasks.length === 0) {
+      const tx = db.transaction('tasks', 'readwrite');
+      for (const task of EXAMPLE_TASKS) {
+        await tx.store.put(task);
+      }
+      await tx.done;
     }
-    await tx.done;
+    await db.put('meta', { key: 'exampleTasksSeeded', value: true });
   }
 }
 

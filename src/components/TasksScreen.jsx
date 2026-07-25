@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import TaskForm from './TaskForm';
+import ScreenContainer from './ScreenContainer';
 
 const panelStyle = {
   background: 'var(--panel)',
@@ -93,7 +94,7 @@ export default function TasksScreen() {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: '0 auto', padding: '20px 16px 90px' }}>
+    <ScreenContainer>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--blue-light)' }}>Quests</span>
         {!showForm && (
@@ -155,6 +156,6 @@ export default function TasksScreen() {
           <TaskRow key={t.id} task={t} onEdit={startEdit} onDelete={removeTask} />
         ))}
       </div>
-    </div>
+    </ScreenContainer>
   );
 }

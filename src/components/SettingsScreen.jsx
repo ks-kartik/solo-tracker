@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { exportBackup, importBackup } from '../lib/db';
 import { requestNotificationPermission, notificationPermissionStatus } from '../lib/notifications';
+import ScreenContainer from './ScreenContainer';
 
 const panelStyle = {
   background: 'var(--panel)',
@@ -85,7 +86,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: '0 auto', padding: '20px 16px 90px' }}>
+    <ScreenContainer>
       <div style={{ marginBottom: 18, fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--blue-light)' }}>
         Settings
       </div>
@@ -152,6 +153,6 @@ export default function SettingsScreen() {
           </button>
         )}
       </div>
-    </div>
+    </ScreenContainer>
   );
 }
