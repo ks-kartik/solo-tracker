@@ -1,0 +1,15 @@
+{
+  "name": "Arise — Habit Tracker",
+  "short_name": "Arise",
+  "description": "A Solo Leveling-inspired habit tracker: complete quests, grow your stats, rank up.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#0A0E1A",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
