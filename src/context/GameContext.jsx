@@ -11,6 +11,7 @@ import {
   setMeta,
 } from '../lib/db';
 import { calculateOverallLevel, lowestStatLevel, calculateRank, levelFromXp } from '../lib/gameLogic';
+import { todayLocal } from '../lib/dateUtils';
 
 const GameContext = createContext(null);
 
@@ -24,30 +25,50 @@ export function GameProvider({ children }) {
   useEffect(() => {
     (async () => {
       await ensureSeeded();
-      let [s, t] = await Promise.all([getAllStats(), getAllTasks()]);
-
-      const today = new Date().toISOString().slice(0, 10);
-      const lastReset = await getMeta('lastResetDate');
-      if (lastReset !== today) {
-        const resetTasks = [];
-        for (const task of t) {
-          if (task.type === 'daily' && task.status !== 'pending') {
-            const resetTask = { ...task, status: 'pending' };
-            resetTasks.push(resetTask);
-          }
-        }
-        if (resetTasks.length > 0) {
-          await Promise.all(resetTasks.map(saveTask));
-          t = t.map((task) => resetTasks.find((r) => r.id === task.id) || task);
-        }
-        await setMeta('lastResetDate', today);
-      }
-
+      const [s, t] = await Promise.all([getAllStats(), getAllTasks()]);
       setStats(s);
       setTasks(t);
       setLoading(false);
     })();
   }, []);
+
+  // Daily reset check: flips completed/failed dailies back to pending
+  // when the local calendar day changes. This can't rely on a single
+  // check at mount, because an iOS PWA can stay "warm" in the app
+  // switcher across midnight without React ever remounting - so we
+  // also re-check on an interval and whenever the tab/app regains
+  // focus, to catch the day rollover even if the app was never fully
+  // closed and relaunched.
+  useEffect(() => {
+    if (loading) return;
+
+    const checkDailyReset = async () => {
+      const today = todayLocal();
+      const lastReset = await getMeta('lastResetDate');
+      if (lastReset === today) return;
+
+      setTasks((prev) => {
+        const toReset = prev.filter((t) => t.type === 'daily' && t.status !== 'pending');
+        toReset.forEach((t) => saveTask({ ...t, status: 'pending' }));
+        return prev.map((t) => (t.type === 'daily' && t.status !== 'pending' ? { ...t, status: 'pending' } : t));
+      });
+
+      await setMeta('lastResetDate', today);
+    };
+
+    checkDailyReset();
+    const interval = setInterval(checkDailyReset, 60 * 1000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') checkDailyReset();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [loading]);
 
   const overall = useMemo(() => calculateOverallLevel(stats), [stats]);
   const lowestLevel = useMemo(() => lowestStatLevel(stats), [stats]);
@@ -110,7 +131,7 @@ export function GameProvider({ children }) {
 
       await saveTask(updatedTask);
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updatedTask : t)));
-      await addLog({ id: `${taskId}-${Date.now()}`, date: new Date().toISOString().slice(0, 10), taskId, status: 'done' });
+      await addLog({ id: `${taskId}-${Date.now()}`, date: todayLocal(), taskId, status: 'done' });
 
       await applyXpToStats(task.linkedStats, 1);
     },
@@ -130,7 +151,7 @@ export function GameProvider({ children }) {
       };
       await saveTask(updatedTask);
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updatedTask : t)));
-      await addLog({ id: `${taskId}-${Date.now()}`, date: new Date().toISOString().slice(0, 10), taskId, status: 'failed' });
+      await addLog({ id: `${taskId}-${Date.now()}`, date: todayLocal(), taskId, status: 'failed' });
 
       if (task.penaltyEnabled) {
         // XP loss as a percentage of current level progress
